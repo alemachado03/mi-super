@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi súper</title>
+<style>
+:root{
+  --bg:#f3f6ef; --surface:#ffffff; --ink:#1d2a1f; --muted:#5f6f62; --line:#d9e1d3;
+  --accent:#1f6b3a; --accent-ink:#ffffff; --danger:#b3261e; --soft:#e4efe1;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121a14; --surface:#1b261e; --ink:#eaf2e8; --muted:#9db0a0; --line:#2c3b30;
+    --accent:#5fcf88; --accent-ink:#0c1d12; --danger:#ff8a80; --soft:#233328;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121a14; --surface:#1b261e; --ink:#eaf2e8; --muted:#9db0a0; --line:#2c3b30;
+  --accent:#5fcf88; --accent-ink:#0c1d12; --danger:#ff8a80; --soft:#233328;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 40px}
+.total{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:14px 0 12px;z-index:5;border-bottom:1px solid var(--line)}
+.total small{display:block;color:var(--muted);font-size:14px}
+.total strong{display:block;font-size:52px;line-height:1.05;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.total .count{color:var(--muted);font-size:14px;margin-top:2px}
+.add{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0}
+.row{display:flex;gap:10px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input{width:100%;font:inherit;font-size:20px;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:12px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.price{flex:2}.qty{flex:1}.name{margin-top:10px}
+.name input{font-size:16px}
+.go{width:100%;margin-top:12px;font:inherit;font-size:19px;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:14px;cursor:pointer}
+.go:active{transform:scale(.98)}
+.tools{display:flex;gap:10px;margin-bottom:10px}
+.tools button{flex:1;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer}
+.tools button.warn{color:var(--danger);border-color:var(--danger)}
+.tools button:disabled{opacity:.45}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+li .info{flex:1;min-width:0}
+li .t{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+li .s{font-size:13px;color:var(--muted)}
+li .amt{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+li .del{font:inherit;font-size:20px;line-height:1;color:var(--muted);background:var(--soft);border:0;border-radius:8px;width:40px;height:40px;cursor:pointer}
+.empty{color:var(--muted);text-align:center;padding:24px 8px}
+.note{color:var(--muted);font-size:13px;text-align:center;margin-top:18px}
+.tabs{display:flex;gap:6px;padding:12px 0 0}
+.tabs button{flex:1;font:inherit;font-size:16px;font-weight:700;color:var(--muted);background:transparent;border:0;border-bottom:3px solid var(--line);padding:10px;cursor:pointer}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.finish{width:100%;font:inherit;font-size:17px;font-weight:700;color:var(--accent);background:transparent;border:2px solid var(--accent);border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer}
+.finish:disabled{opacity:.45}
+#hist{display:none;padding-top:14px}
+li .t.wrap{white-space:normal}
+li .del.armed{background:var(--danger);color:var(--surface);width:auto;padding:0 12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="tabs"><button id="tab-shop" class="on" aria-selected="true">Compra</button><button id="tab-hist" aria-selected="false">Historial</button></nav>
+  <div id="shop">
+  <div class="total" aria-live="polite">
+    <small>Total hasta ahora</small>
+    <strong id="total">$0.00</strong>
+    <div class="count" id="count">Sin productos</div>
+  </div>
+
+  <div class="add">
+    <div class="row">
+      <div class="price"><label for="price">Precio ($)</label>
+        <input id="price" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00"></div>
+      <div class="qty"><label for="qty">Cantidad</label>
+        <input id="qty" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
+    </div>
+    <div class="name"><label for="name">Producto (opcional)</label>
+      <input id="name" type="text" autocomplete="off" placeholder="Ej. leche"></div>
+    <button class="go" id="add">Agregar</button>
+  </div>
+
+  <button class="finish" id="finish">Terminar y guardar compra</button>
+  <div class="tools">
+    <button id="undo">Deshacer último</button>
+    <button id="clear" class="warn">Vaciar lista</button>
+  </div>
+
+  <ul id="list"></ul>
+  <p class="note">Tu lista se guarda sola en este teléfono. Si cierras la página, la suma sigue aquí.</p>
+  </div>
+  <div id="hist">
+    <ul id="hlist"></ul>
+    <p class="note">Aquí se guarda la fecha y el total de cada día. Si compras dos veces el mismo día, se suman.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY = "super-lista-v1";
+  var items = [];
+  var clearArmed = false, clearTimer = null, finishArmed = false;
+  var $ = function(id){ return document.getElementById(id); };
+
+  try { var raw = localStorage.getItem(KEY); if (raw) items = JSON.parse(raw) || []; } catch(e){ items = []; }
+  if (!Array.isArray(items)) items = [];
+
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){} }
+  function money(c){ return "$" + (c/100).toFixed(2); }
+  function parsePrice(s){
+    s = String(s).trim().replace(",", ".");
+    if (!/^\d*\.?\d{0,2}$/.test(s) || s === "" || s === ".") return null;
+    return Math.round(parseFloat(s) * 100);
+  }
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+  function render(){
+    var sum = 0, units = 0;
+    items.forEach(function(it){ sum += it.cents * it.qty; units += it.qty; });
+    $("total").textContent = money(sum);
+    $("count").textContent = items.length ? items.length + (items.length === 1 ? " producto" : " productos") + ", " + units + (units === 1 ? " unidad" : " unidades") : "Sin productos";
+    $("undo").disabled = !items.length;
+    $("clear").disabled = !items.length;
+    $("finish").disabled = !items.length;
+    $("finish").textContent = finishArmed ? "Toca otra vez para guardar" : "Terminar y guardar compra";
+    $("clear").textContent = clearArmed ? "Toca otra vez para vaciar" : "Vaciar lista";
+    var ul = $("list");
+    if (!items.length){ ul.innerHTML = '<li class="empty" style="display:block;border:0;background:none">Escribe un precio y toca Agregar.</li>'; return; }
+    ul.innerHTML = items.slice().reverse().map(function(it){
+      var idx = items.indexOf(it);
+      var label = it.name ? esc(it.name) : "Producto";
+      var sub = it.qty > 1 ? it.qty + " x " + money(it.cents) : "";
+      return '<li><div class="info"><div class="t">' + label + '</div>' + (sub ? '<div class="s">' + sub + '</div>' : '') + '</div><div class="amt">' + money(it.cents * it.qty) + '</div><button class="del" data-i="' + idx + '" aria-label="Quitar ' + label + '">×</button></li>';
+    }).join("");
+  }
+
+  function disarm(){ clearArmed = false; clearTimeout(clearTimer); }
+
+  function add(){
+    var c = parsePrice($("price").value);
+    var q = parseInt($("qty").value, 10);
+    if (c === null || c <= 0){ $("price").focus(); $("price").style.borderColor = "var(--danger)"; return; }
+    $("price").style.borderColor = "";
+    if (!q || q < 1) q = 1;
+    items.push({ cents: c, qty: q, name: $("name").value.trim() });
+    save(); disarm();
+    $("price").value = ""; $("qty").value = "1"; $("name").value = "";
+    render(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+
+  $("add").addEventListener("click", add);
+  ["price","qty","name"].forEach(function(id){
+    $(id).addEventListener("keydown", function(e){ if (e.key === "Enter") add(); });
+  });
+  $("undo").addEventListener("click", function(){ items.pop(); save(); disarm(); render(); });
+  $("clear").addEventListener("click", function(){
+    if (!clearArmed){
+      clearArmed = true; render();
+      clearTimer = setTimeout(function(){ clearArmed = false; render(); }, 4000);
+      return;
+    }
+    items = []; save(); disarm(); render();
+  });
+  $("list").addEventListener("click", function(e){
+    var b = e.target.closest(".del"); if (!b) return;
+    items.splice(parseInt(b.getAttribute("data-i"), 10), 1);
+    save(); disarm(); render();
+  });
+
+  var HKEY = "super-historial-v1", hist = [], delArmed = -1, delTimer = null, finishTimer = null;
+  try { var hr = localStorage.getItem(HKEY); if (hr) hist = JSON.parse(hr) || []; } catch(e){ hist = []; }
+  if (!Array.isArray(hist)) hist = [];
+  function saveH(){ try { localStorage.setItem(HKEY, JSON.stringify(hist)); } catch(e){} }
+  function today(){ var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function fmtDate(s){
+    var p = s.split("-");
+    var t = new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function renderHist(){
+    var ul = $("hlist");
+    if (!hist.length){ ul.innerHTML = '<li class="empty" style="display:block;border:0;background:none">Aún no hay compras guardadas. Al terminar tu compra, toca Terminar y guardar compra.</li>'; return; }
+    ul.innerHTML = hist.map(function(h, i){
+      var armed = delArmed === i;
+      return '<li><div class="info"><div class="t wrap">' + fmtDate(h.date) + '</div></div><div class="amt">' + money(h.cents) + '</div><button class="del' + (armed ? ' armed' : '') + '" data-h="' + i + '" aria-label="Borrar este día">' + (armed ? 'Borrar' : '×') + '</button></li>';
+    }).join("");
+  }
+  function showTab(n){
+    var h = n === "hist";
+    $("shop").style.display = h ? "none" : "";
+    $("hist").style.display = h ? "block" : "none";
+    $("tab-shop").className = h ? "" : "on";
+    $("tab-hist").className = h ? "on" : "";
+    $("tab-shop").setAttribute("aria-selected", h ? "false" : "true");
+    $("tab-hist").setAttribute("aria-selected", h ? "true" : "false");
+    window.scrollTo(0, 0);
+  }
+  $("tab-shop").addEventListener("click", function(){ showTab("shop"); });
+  $("tab-hist").addEventListener("click", function(){ renderHist(); showTab("hist"); });
+  $("finish").addEventListener("click", function(){
+    if (!items.length) return;
+    if (!finishArmed){
+      finishArmed = true; render();
+      finishTimer = setTimeout(function(){ finishArmed = false; render(); }, 4000);
+      return;
+    }
+    clearTimeout(finishTimer); finishArmed = false;
+    var sum = 0; items.forEach(function(it){ sum += it.cents * it.qty; });
+    var d = today(), found = null;
+    hist.forEach(function(h){ if (h.date === d) found = h; });
+    if (found) found.cents += sum; else hist.push({ date: d, cents: sum });
+    hist.sort(function(a, b){ return a.date < b.date ? 1 : -1; });
+    items = []; save(); saveH(); disarm();
+    render(); renderHist(); showTab("hist");
+  });
+  $("hlist").addEventListener("click", function(e){
+    var b = e.target.closest(".del"); if (!b) return;
+    var i = parseInt(b.getAttribute("data-h"), 10);
+    if (delArmed !== i){
+      delArmed = i; clearTimeout(delTimer);
+      delTimer = setTimeout(function(){ delArmed = -1; renderHist(); }, 4000);
+      renderHist(); return;
+    }
+    hist.splice(i, 1); saveH(); delArmed = -1; clearTimeout(delTimer); renderHist();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
